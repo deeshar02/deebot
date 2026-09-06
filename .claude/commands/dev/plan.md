@@ -1,6 +1,5 @@
-```
 ---
-description: Write a single-pass executable plan for a module or sub-task
+description: Work out how to build something, and write the plan down before touching code
 argument-hint: [module-or-task-description]
 ---
 
@@ -10,7 +9,7 @@ Produce an executable plan for: `$ARGUMENTS`
 
 ## Rules
 
-Beyond the **Workflow rules** in `CLAUDE.md`:
+Beyond the **Workflow rules** and **Talking to me** sections in `CLAUDE.md`:
 
 - **Write the plan, not the code.** The only file this command creates is
   `docs/plans/{sequence}.{slug}.md`. No source edits, however small or obvious —
@@ -22,11 +21,14 @@ Beyond the **Workflow rules** in `CLAUDE.md`:
   task, it's a hope. See *Validation* below for what counts.
 - **Write for a stranger.** The agent that executes this plan won't have seen this
   conversation. Anything you know but don't write down is lost.
+- **The plan file is technical; the report isn't.** The plan is read by the agent
+  that builds it, so keep it exact — real paths, real commands, no hand-waving.
+  What you tell me about it follows the **Talking to me** rules instead.
 - **Split rather than sprawl.** Roughly ten tasks is the ceiling for one plan. Past
   that, it's 🔴 — propose a split instead of writing one mega-plan.
 - **Unknowns are named, not smoothed over.** If something can't be settled without
-  running code or asking the user, write it into the plan as an open question with
-  the decision it blocks. Don't paper over it with a plausible-sounding task.
+  running code or asking me, write it into the plan as an open question with the
+  decision it blocks. Don't paper over it with a plausible-sounding task.
 
 ## Process
 
@@ -86,10 +88,21 @@ Beyond the **Workflow rules** in `CLAUDE.md`:
 
 ## Output
 
-- Path to the plan file
-- Complexity indicator
-- One-paragraph summary of the approach, and how it fits what's already there
-- Any open questions the user needs to answer before building
-- Hand off: "Next: `/dev:build docs/plans/{file}.md`"
-- ⁠
-```
+Around 15 lines, in this order:
+
+1. **What I'm going to build** — two or three sentences. What will be different
+   and visible once this is done, not which files get touched.
+2. **How big this is** — the complexity indicator, said as what it means for me:
+   - ✅ **Simple** — one sitting, little chance of surprises
+   - ⚠️ **Medium** — expect a round or two of back-and-forth
+   - 🔴 **Too big as one piece** — here's how I'd split it, and which part to
+     start with
+3. **What I need from you first** — anything from the plan's *Open questions*
+   that genuinely blocks a task, in the decision format from `CLAUDE.md`. If
+   nothing's blocked, say "nothing needed from you" and move on.
+4. **Anything I'd flag** — a risk, a thing this will be stuck with afterwards, or
+   an assumption I made. One line each, skip if there are none.
+5. **Where the plan lives** — the file path, in case you want to read it.
+6. **Next step** — `/dev:build docs/plans/{file}.md`
+
+Don't summarise the task list. If I want the detail, I'll open the file.

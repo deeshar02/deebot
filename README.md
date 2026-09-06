@@ -10,8 +10,7 @@ context, and the `/dev:*` commands handle the plan → build → handover loop.
 .
 ├── .claude/
 │   └── commands/dev/       # Agent workflow commands
-│       ├── onboard.md            /dev:onboard — orient a fresh session
-│       ├── onboard-learning.md   /dev:onboard-learning — plain-language onboard
+│       ├── onboard.md            /dev:onboard — get up to speed on the project
 │       ├── plan.md               /dev:plan — write an executable plan
 │       ├── build.md              /dev:build — execute a plan with validation
 │       └── handover.md           /dev:handover — checks, docs, memory handoff
@@ -53,11 +52,18 @@ Each command file has the same three parts, in this order:
 - **Rules** — the guardrails, stated before any step. An agent meets them before it
   starts acting, not halfway through.
 - **Process** — the numbered steps.
-- **Output** — what gets reported back.
+- **Output** — what gets reported back, and in what shape.
 
-The rules shared by all four commands live once in the **Workflow rules** section
-of `CLAUDE.md`; each command file adds only the rules particular to itself. When
-you change how the workflow behaves, change it there — not in four places.
+The rules shared by all four commands live once in `CLAUDE.md` — **Workflow
+rules** for how the loop behaves, **Talking to me** for how results are written
+up. Each command file adds only the rules particular to itself. When you change
+how the workflow behaves, change it there — not in four places.
+
+The split that matters: the **Process** sections stay as technical as the work
+requires, and so do plan files and commits. The **Output** sections are written
+for a non-engineer — plain English, short, with decisions broken down into what
+each option actually costs and gets you. Precision in the doing, clarity in the
+telling.
 
 The load-bearing ones:
 

@@ -1,6 +1,5 @@
-```
 ---
-description: Execute a plan from docs/plans/
+description: Build what a plan describes, checking each step as it goes
 argument-hint: [link-to-plan]
 ---
 
@@ -10,7 +9,7 @@ Read and execute: `$ARGUMENTS`
 
 ## Rules
 
-Beyond the **Workflow rules** in `CLAUDE.md`:
+Beyond the **Workflow rules** and **Talking to me** sections in `CLAUDE.md`:
 
 - **The plan is the scope.** Execute what it says. If you spot something worth
   doing that the plan doesn't cover, note it for the report and move on — don't
@@ -18,16 +17,19 @@ Beyond the **Workflow rules** in `CLAUDE.md`:
 - **Validate after every task, one at a time.** Never batch several tasks and check
   once at the end; when it breaks you won't know which one broke it.
 - **Two failures on the same task means stop.** Fix once, retry. If the same task
-  fails its check again, stop, report what failed and what you tried, and offer the
-  plan's **Rollback** path. A third improvised attempt is how a bad plan becomes a
-  broken repo.
+  fails its check again, stop and come to me: what's stuck, in plain English, what
+  you tried, and what my options are — including the plan's **Rollback** path and
+  what rolling back would undo. Then wait. A third improvised attempt is how a bad
+  plan becomes a broken repo.
 - **Reuse before you introduce.** Existing components, utilities and patterns first;
   a new primitive needs a reason you can state in the report.
 - **A missing path is a stop, not a decision.** If a file the plan names doesn't
-  exist, reconcile with the user rather than creating it somewhere plausible.
+  exist, reconcile with me rather than creating it somewhere plausible.
 - **`PROGRESS.md` follows reality.** Flip an item only after its check has actually
   passed. Update as you go, not in one sweep at the end — a session that gets cut
   short should leave an accurate file behind.
+- **Work silently, report at the end.** No running commentary. One line if you
+  change direction mid-way or something takes a while, then the report at the end.
 
 ## Process
 
@@ -37,7 +39,7 @@ Beyond the **Workflow rules** in `CLAUDE.md`:
    now rather than at that task.
 
 2. **Check the pre-conditions** — branch, env, deps, credentials. If one isn't met,
-   stop and say which. Don't work around it.
+   stop and say which, in plain English. Don't work around it.
 
 3. **Execute tasks in order**, following the conventions in `CLAUDE.md`:
    - Reuse existing components, utilities and patterns rather than adding new ones
@@ -60,13 +62,21 @@ Beyond the **Workflow rules** in `CLAUDE.md`:
    - Parent module to `[-]` in progress, or `[x]` only when *every* sub-item is `[x]`
    - `[!]` for anything blocked, with the reason on the line
 
-6. **Report completion**
-   - Tasks completed, and any skipped — with the reason
-   - Files created / modified
-   - Validation results per task, including anything left unvalidated and why
-   - Deviations from the plan, and why
-   - Anything you noticed but deliberately left alone
+6. **Report back** — around 15 lines, in this order:
 
-7. **Suggest the next step** — the next plan in the sequence, or `/dev:handover` if
-   this is where the session stops.
-```
+   1. **What works now that didn't before** — the observable result, in plain
+      English. Not the list of files.
+   2. **Did the checks pass?** — plain words. "Everything passed" or exactly
+      what's still failing and what that means for the project. Never round a
+      partial pass up to green, and never call something done that wasn't checked.
+   3. **Anything I need to decide or do** — decision format from `CLAUDE.md`.
+   4. **What you skipped, changed, or noticed and left alone** — one line each,
+      with the reason. This is where deviations from the plan go.
+   5. **How far through the plan we are** — done, and what's left.
+
+   Anything technical — file paths, the commands you ran, check output — goes at
+   the very bottom under **Details**, or nowhere if the run was clean. I'll ask
+   if I want it.
+
+7. **Suggest the next step** — one line: the next plan in the sequence, or
+   `/dev:handover` if this is where the session stops.
