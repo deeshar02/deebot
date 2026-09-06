@@ -1,6 +1,5 @@
-```
 ---
-description: Onboard Claude Code into this codebase
+description: Get up to speed on this project and report where things stand
 ---
 
 # Onboard
@@ -10,7 +9,7 @@ command of the loop; it changes nothing.
 
 ## Rules
 
-Beyond the **Workflow rules** in `CLAUDE.md`:
+Beyond the **Workflow rules** and **Talking to me** sections in `CLAUDE.md`:
 
 - **Read-only.** Never edit, create, or commit anything during an onboard. If
   something looks broken or contradictory, report it — don't repair it.
@@ -25,6 +24,9 @@ Beyond the **Workflow rules** in `CLAUDE.md`:
   what to build next is `/dev:plan`'s job.
 
 ## Process
+
+Read widely here — the reading is for you, not for the report. Most of what you
+read won't be worth mentioning.
 
 1. **Scan structure**
    - `git ls-files | head -100` to see tracked files
@@ -51,14 +53,20 @@ Beyond the **Workflow rules** in `CLAUDE.md`:
 
 ## Output
 
-A brief summary:
+Around 15 lines, in this order:
 
-- **What this project does** and who it's for (from `PRD.md`)
-- **Tech stack** — current, and target if a migration is in flight
-- **Main surfaces** (routes/pages/services) and which are dynamic or data-driven
-- **Where it stands** — current branch, recent activity, uncommitted changes
-- **What's in flight** — the `[-]` module in `PROGRESS.md`, anything marked `[!]`
-  blocked, and the active plan in `docs/plans/`
-- **Still unfilled** — any template placeholder left in `PRD.md`, `PROGRESS.md` or
-  `CLAUDE.md`, and any check you skipped and why
-```
+1. **What this project is** — a sentence or two, from `PRD.md`.
+2. **Where it stands** — what's finished, what's part-done, what's stuck. Say
+   what a blocker actually blocks, in plain English; don't just repeat the `[!]`
+   marker from `PROGRESS.md`.
+3. **What's waiting on me** — open questions and blockers I need to answer. Just
+   the list here. Use the decision format from `CLAUDE.md` only if I pick one to
+   go into.
+4. **Setup still missing** — any template `{placeholder}` still unfilled, and
+   what it stops you doing. "The checks can't run until we say how to run them"
+   beats naming the table row.
+5. **Anything you couldn't check**, and why.
+
+Leave out the tech-stack inventory, the file tour and the route map unless I ask
+— you read them to orient yourself, not to recite them. If something looks
+broken or contradictory, flag it in a line; don't fix it.
