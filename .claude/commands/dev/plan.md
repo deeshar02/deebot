@@ -9,11 +9,13 @@ Produce an executable plan for: `$ARGUMENTS`
 
 ## Rules
 
-Beyond the **Workflow rules** and **Talking to me** sections in `CLAUDE.md`:
+Beyond the **Workflow rules**, **Superpowers skills** and **Talking to me**
+sections in `CLAUDE.md`:
 
-- **Write the plan, not the code.** The only file this command creates is
-  `docs/plans/{sequence}.{slug}.md`. No source edits, however small or obvious —
-  that's `/dev:build`'s pass.
+- **Write the plan, not the code.** The only files this command creates are the
+  plan at `.dadai/plans/{sequence}.{slug}.md` and — if brainstorming was needed —
+  its design note. No source edits, however small or obvious; that's
+  `/dev:build`'s pass.
 - **Read before you write.** Open the files the plan will touch, so tasks name real
   paths and real symbols. A plan built from guesses fails at the first task, and
   fails in the pass where changes are already landing.
@@ -32,14 +34,27 @@ Beyond the **Workflow rules** and **Talking to me** sections in `CLAUDE.md`:
 
 ## Process
 
-1. **Locate context**
-   - `PRD.md` — the relevant module's *Build* / *Delivers*
-   - `PROGRESS.md` — what's already done, and what blocks the requested work
-   - `docs/plans/` — any earlier plan that overlaps, so this one extends it rather
-     than contradicting it
+1. **If the ask is vague, brainstorm first**
+
+   If `$ARGUMENTS` doesn't pin down what "done" looks like, invoke
+   `superpowers:brainstorming` before planning — planning a vague ask means
+   guessing, and the guess only surfaces once code is landing.
+
+   Two adjustments to that skill: batch your questions using the decision format
+   in `CLAUDE.md` rather than asking one per message, and put any design note it
+   produces in `.dadai/plans/{sequence}.{slug}.design.md`, beside the plan it
+   feeds. Skip this step entirely when the ask is already concrete.
+
+2. **Locate context**
+   - `.dadai/PRD.md` — the relevant module's *Build* / *Delivers*
+   - `.dadai/PROGRESS.md` — what's already done, and what blocks the requested work
+   - `.dadai/plans/` — any earlier plan that overlaps, so this one extends it
+     rather than contradicting it
+   - `docs/README.md` and any page it lists that covers this area — the plan
+     should build on what's already documented, not rediscover it
    - The source files the plan will touch
 
-2. **Decide fit and complexity**
+3. **Decide fit and complexity**
 
    State what this reuses and what it must not duplicate — existing components,
    utilities, config, patterns. Then add a complexity indicator at the top:
@@ -50,10 +65,15 @@ Beyond the **Workflow rules** and **Talking to me** sections in `CLAUDE.md`:
 
    If 🔴, stop and propose the split. Don't write the mega-plan first.
 
-3. **Write the plan to** `docs/plans/{sequence}.{slug}.md`
+4. **Write the plan to** `.dadai/plans/{sequence}.{slug}.md`
 
    Sequence matches the PRD module number where possible (`2.data-layer.md`,
-   `3.1.auth-flow.md`). Required sections:
+   `3.1.auth-flow.md`). Use `superpowers:writing-plans` as the quality bar for
+   what a task should look like — but **override its execution header**: plans
+   here are executed by `/dev:build`, not by that skill's own machinery, and not
+   by subagents unless I ask for that by name.
+
+   Required sections:
 
    - **Goal** — one sentence, tied to the PRD module
    - **Fit** — where this slots in, what it reuses, what it must not duplicate
@@ -61,6 +81,10 @@ Beyond the **Workflow rules** and **Talking to me** sections in `CLAUDE.md`:
      already be true before task 1
    - **Tasks** — ordered; each names the file paths to touch, the change, and at
      least one validation step
+   - **Docs** — which page in `docs/` this work will add to or update, and in
+     which folder (`guides/`, `reference/`, `recipes/`). If the work produces no
+     durable knowledge, write "none" and say why in half a line — that's a valid
+     and common answer. Never invent a doc to fill this section.
    - **Validation** — the overall success check: what is observably true when the
      whole plan has landed
    - **Rollback** — how to revert cleanly if it fails partway. Be specific: which
@@ -70,7 +94,7 @@ Beyond the **Workflow rules** and **Talking to me** sections in `CLAUDE.md`:
    - **Open questions** — anything unresolved, and what it blocks. Omit the section
      only if there genuinely are none.
 
-4. **Validation is mandatory**
+5. **Validation is mandatory**
 
    Every task needs at least one verifiable check, using the Commands table in
    `CLAUDE.md`. What counts:
@@ -103,6 +127,6 @@ Around 15 lines, in this order:
 4. **Anything I'd flag** — a risk, a thing this will be stuck with afterwards, or
    an assumption I made. One line each, skip if there are none.
 5. **Where the plan lives** — the file path, in case you want to read it.
-6. **Next step** — `/dev:build docs/plans/{file}.md`
+6. **Next step** — `/dev:build .dadai/plans/{file}.md`
 
 Don't summarise the task list. If I want the detail, I'll open the file.

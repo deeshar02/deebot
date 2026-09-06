@@ -8,8 +8,34 @@
 
 ## Project
 
-{One paragraph: what this project is and its current phase. Link to `PRD.md` for
-scope and `PROGRESS.md` for status.}
+{One paragraph: what this project is and its current phase. Link to
+`.dadai/PRD.md` for scope and `.dadai/PROGRESS.md` for status.}
+
+## Where things live
+
+Two homes, split by audience. `.dadai/` is the machinery the workflow runs on;
+`docs/` is written for people to read.
+
+| Path | Holds | Who reads it |
+|---|---|---|
+| `.dadai/PRD.md` | The contract — what we're building and why | Both |
+| `.dadai/PROGRESS.md` | Status, decision log, blockers | Both |
+| `.dadai/plans/` | Executable plans, `{seq}.{slug}.md` | Agents |
+| `.dadai/config/` | Settings, assets, and the secrets template | Both |
+| `docs/` | The wiki — guides, reference, recipes | People |
+
+Rules that follow from the split:
+
+- **Plan filenames are `{seq}.{slug}.md`**, where `{seq}` matches the PRD module
+  number (`2.data-layer.md`, `3.1.auth-flow.md`). Not date-prefixed — the
+  sequence ties a plan to the module it delivers.
+- **Secrets never enter git.** `.dadai/config/secrets.env` is gitignored;
+  `secrets.env.example` is committed with keys but no values. See
+  `.dadai/config/README.md`.
+- **`docs/` is not a changelog.** It holds durable knowledge only — how
+  something works, how to do a recurring task. What happened and when lives in
+  `.dadai/PROGRESS.md` and git history. `docs/README.md` is the index and the
+  authority on what goes in which folder; read it before adding a page.
 
 ## Commands
 
@@ -40,9 +66,50 @@ while the project is still being set up.
 This project uses the PRD → plan → build → handover loop:
 
 1. `/dev:onboard` — orient a fresh session
-2. `/dev:plan <module or task>` — write an executable plan to `docs/plans/`
-3. `/dev:build docs/plans/<file>.md` — execute the plan with per-task validation
-4. `/dev:handover` — run the checks, update `PROGRESS.md` / plan / memory, hand off cleanly
+2. `/dev:plan <module or task>` — write an executable plan to `.dadai/plans/`
+3. `/dev:build .dadai/plans/<file>.md` — execute the plan with per-task validation
+4. `/dev:handover` — run the checks, update `.dadai/PROGRESS.md` / plan / docs / memory
+
+## Superpowers skills
+
+The superpowers skills are used where they earn their place, and overridden
+where they'd fight this project's rules. Invoke them with the `Skill` tool.
+
+| Skill | Use it |
+|---|---|
+| `superpowers:verification-before-completion` | Before any claim that work is done — in `/dev:build` and `/dev:handover`. No caveats; this one just applies. |
+| `superpowers:systematic-debugging` | In `/dev:build`, the moment a check fails. |
+| `superpowers:brainstorming` | In `/dev:plan`, when the ask is vague enough that planning it straight would be guessing. |
+| `superpowers:writing-plans` | In `/dev:plan`, as the quality bar for the plan file. |
+| `superpowers:test-driven-development` | In `/dev:build`, for code tasks, once a real test command exists in the Commands table. |
+| `superpowers:requesting-code-review` | In `/dev:handover`, before opening a PR. |
+| `superpowers:finishing-a-development-branch` | Only when I explicitly ask to wrap up a branch. |
+
+**Where this project's rules win.** These skills were written for a different
+workflow. Where they disagree with what's below, what's below is the authority —
+don't follow a skill off the edge of this project's conventions:
+
+1. **Never auto-chain into git operations.** `executing-plans` and
+   `subagent-driven-development` hand off into branch-finishing that merges,
+   pushes and deletes branches. That is overridden by *"don't commit or push
+   unless asked"*. Finishing a branch happens when I ask for it, never as a
+   step something else triggered.
+2. **Never remove a worktree.** `finishing-a-development-branch` offers to run
+   `git worktree remove`. Claude Code manages the worktrees under
+   `.claude/worktrees/` — including, possibly, the one the session is standing
+   in. Ask me; don't run it.
+3. **Plans are executed by `/dev:build`.** `writing-plans` adds a header telling
+   a future agent to execute the plan through its own machinery. Replace that
+   with a pointer to `/dev:build` — the two-pass split is not negotiable.
+4. **Two failures, not three.** `systematic-debugging` escalates after three
+   failed fixes. Ours stops at two and asks me.
+5. **TDD applies to code, not markdown.** Until the Commands table has a real
+   test row there is nothing to run — say so and carry on, rather than blocking.
+6. **Reporting style is set by "Talking to me".** These skills announce
+   themselves and ask one question per message. Don't. Answer first, stay short,
+   use the decision format.
+7. **`subagent-driven-development` is not the default.** It replaces the build
+   loop wholesale. Use it only if I ask for it by name.
 
 ## Talking to me
 
@@ -122,9 +189,9 @@ Gloss a term the first time it comes up, then use it freely.
 These hold for every `/dev:*` command. Each command file states only the rules
 particular to itself and leans on these for the rest.
 
-1. **`PRD.md` is the contract; `PROGRESS.md` is the status.** Scope questions are
-   answered by the PRD. What's done is answered by `PROGRESS.md` — not by reading
-   the code and inferring.
+1. **`.dadai/PRD.md` is the contract; `.dadai/PROGRESS.md` is the status.** Scope
+   questions are answered by the PRD. What's done is answered by `PROGRESS.md` —
+   not by reading the code and inferring.
 2. **Planning and building are separate passes.** `/dev:plan` writes a plan and
    changes nothing else. `/dev:build` executes a plan and invents nothing else.
    Don't collapse the two because a task looks small.
@@ -140,6 +207,12 @@ particular to itself and leans on these for the rest.
 7. **Memory holds durable facts only** — preferences, constraints, non-obvious
    gotchas, and a pointer to the active plan. Branch names, commit hashes and file
    lists live in git, so they never belong in memory.
+8. **Docs capture knowledge, not events.** `/dev:plan` and `/dev:build` keep
+   `docs/` current, but only where durable knowledge came out of the work —
+   how something works, how to do a recurring task. Update an existing page
+   before writing a new one, and add every new page to the index in
+   `docs/README.md` in the same commit. A build that produced no reusable
+   knowledge writes no doc, and says so in a line.
 
 ## Gotchas
 
