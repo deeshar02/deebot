@@ -1,0 +1,30 @@
+# Secrets — never commit these.
+# Config and assets in .dadai/config/ ARE committed; anything below is not.
+.dadai/config/secrets.env
+.dadai/config/*.local
+.dadai/config/*.local.*
+.env
+*.pem
+*.key
+*.p12
+credentials.json
+
+# Claude Code working copies — ephemeral, not part of the project
+.claude/worktrees/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# Node
+node_modules/
+dist/
+build/
+
+# OS noise
+.DS_Store
+Thumbs.db

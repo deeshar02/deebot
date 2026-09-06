@@ -14,36 +14,50 @@ context, and the `/dev:*` commands handle the plan → build → handover loop.
 │       ├── plan.md               /dev:plan — write an executable plan
 │       ├── build.md              /dev:build — execute a plan with validation
 │       └── handover.md           /dev:handover — checks, docs, memory handoff
-├── docs/
-│   └── plans/              # Executable plans land here ({seq}.{slug}.md)
-├── PRD.md                  # Product contract: vision, scope, stack, modules
-├── PROGRESS.md             # Module checklist ([ ] / [-] / [x] / [!])
+├── .dadai/                 # How the project is run — the workflow's own files
+│   ├── PRD.md              #   Product contract: vision, scope, stack, modules
+│   ├── PROGRESS.md         #   Module checklist ([ ] / [-] / [x] / [!])
+│   ├── plans/              #   Executable plans land here ({seq}.{slug}.md)
+│   └── config/             #   Settings, assets, and the secrets template
+├── docs/                   # The wiki — written for people to read
+│   ├── README.md           #   Index and the rules for what goes where
+│   ├── guides/             #   Doing a task, start to finish
+│   ├── reference/          #   How something works
+│   └── recipes/            #   Short, specific fixes
 ├── CLAUDE.md               # Agent context: commands, conventions, workflow rules
 └── README.md               # This file — replace with the project's README
 ```
 
+The split that matters: **`.dadai/` is machinery, `docs/` is for reading.** Plans,
+status and config live in `.dadai/`; anything a person would want to look up lives
+in `docs/`.
+
 ## Starting a new project
 
 1. **Copy this repo** (or use it as a GitHub template) and rename it.
-2. **Fill in `PRD.md`** — vision, users, scope, stack, constraints, and the
+2. **Fill in `.dadai/PRD.md`** — vision, users, scope, stack, constraints, and the
    numbered module list. This is the contract everything else hangs off.
-3. **Mirror the modules into `PROGRESS.md`** as checklists with sub-tasks.
+3. **Mirror the modules into `.dadai/PROGRESS.md`** as checklists with sub-tasks.
 4. **Fill in `CLAUDE.md`** — especially the Commands table. Every check the
    workflow runs is discovered from it, so until it's filled in the commands will
    report the gap and skip the checks rather than guess at your stack.
-5. **Replace this README** with the project's own.
+5. **Set up secrets if you need them** — copy
+   `.dadai/config/secrets.env.example` to `.dadai/config/secrets.env` and fill it
+   in. The copy is gitignored and never leaves your machine.
+6. **Replace this README** with the project's own.
 
 ## The workflow loop
 
 ```
-/dev:onboard                          # orient (once per fresh session)
-/dev:plan Module 2                    # → docs/plans/2.{slug}.md
-/dev:build docs/plans/2.{slug}.md     # execute, validating every task
-/dev:handover                         # checks run, docs updated, memory set
+/dev:onboard                            # orient (once per fresh session)
+/dev:plan Module 2                      # → .dadai/plans/2.{slug}.md
+/dev:build .dadai/plans/2.{slug}.md     # execute, validating every task
+/dev:handover                           # checks run, docs updated, memory set
 ```
 
-Every plan carries its own validation steps and rollback path; `PROGRESS.md` is the
-single source of truth for what's done.
+Every plan carries its own validation steps and rollback path;
+`.dadai/PROGRESS.md` is the single source of truth for what's done, and `docs/`
+accumulates whatever durable knowledge the work threw off along the way.
 
 ## How the commands are written
 

@@ -14,9 +14,9 @@ Beyond the **Workflow rules** and **Talking to me** sections in `CLAUDE.md`:
 - **Read-only.** Never edit, create, or commit anything during an onboard. If
   something looks broken or contradictory, report it — don't repair it.
 - **Report the gaps, don't fill them.** A repo freshly copied from the template
-  still has `{placeholders}` in `PRD.md` and `CLAUDE.md`. That's expected, not an
-  error. Name the files that still need filling in and stop there — never infer
-  the project's scope from its file names.
+  still has `{placeholders}` in `.dadai/PRD.md` and `CLAUDE.md`. That's expected,
+  not an error. Name the files that still need filling in and stop there — never
+  infer the project's scope from its file names.
 - **Skip checks you can't run honestly.** The health check uses the Commands table
   in `CLAUDE.md`. If the row is still a placeholder, or the command fails because
   dependencies aren't installed, say that instead of trying alternatives.
@@ -36,15 +36,18 @@ read won't be worth mentioning.
      subagents this project has beyond the template's
 
 2. **Read key files**
-   - `CLAUDE.md` — conventions, the Commands table, and the workflow rules
-   - `PRD.md` — vision, scope, and the module breakdown
-   - `PROGRESS.md` — what's done, in flight, and blocked
+   - `CLAUDE.md` — conventions, the Commands table, where things live, and the
+     workflow rules
+   - `.dadai/PRD.md` — vision, scope, and the module breakdown
+   - `.dadai/PROGRESS.md` — what's done, in flight, and blocked
+   - `docs/README.md` — the wiki index; tells you what's already documented, so
+     you don't report as unknown something that's already written down
    - `README.md`
    - The entry point(s) and router/navigation map
    - The package/build manifest (`package.json`, `pyproject.toml`, `Cargo.toml`, …)
      and framework config files
-   - The most recent plan in `docs/plans/`, if any — it says what the last session
-     was mid-way through
+   - The most recent plan in `.dadai/plans/`, if any — it says what the last
+     session was mid-way through
 
 3. **Check state**
    - `git status` and `git log -10 --oneline`
@@ -55,10 +58,10 @@ read won't be worth mentioning.
 
 Around 15 lines, in this order:
 
-1. **What this project is** — a sentence or two, from `PRD.md`.
+1. **What this project is** — a sentence or two, from `.dadai/PRD.md`.
 2. **Where it stands** — what's finished, what's part-done, what's stuck. Say
    what a blocker actually blocks, in plain English; don't just repeat the `[!]`
-   marker from `PROGRESS.md`.
+   marker from `.dadai/PROGRESS.md`.
 3. **What's waiting on me** — open questions and blockers I need to answer. Just
    the list here. Use the decision format from `CLAUDE.md` only if I pick one to
    go into.
