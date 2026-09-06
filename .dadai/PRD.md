@@ -1,13 +1,16 @@
 # Deebot — an agentic research operating system for institutional investment work
 
-> **Contract status:** Draft v0.1, written from a short discovery conversation, not
-> a full requirements interview. Several inputs the source process asks for
-> (named source list, corpus size, licensed-vendor access, entity taxonomy, voice
-> exemplars, brand assets, hard compliance constraints, the specific first
-> deliverable) were not supplied — each is marked inline as
-> `[ASSUMPTION: …]` where it materially shapes a decision, and rolled up in
-> §12. Confirm or correct those before Phase 1 work goes past the verification
-> spike.
+> **Contract status:** Draft v0.2. Scope was deliberately narrowed on 2026-09-06:
+> **the only committed scope in this document is §6 — Module 0, the three
+> builders.** Everything from §7 onward (the five pillars, the design system,
+> the later milestones) is a design sketch carried forward from v0.1, not
+> agreed scope, and is re-opened for revision once Module 0 lands (§10,
+> Phase 2). Inputs the source process asks for but that were not supplied
+> (named source list, corpus size, licensed-vendor access, entity taxonomy,
+> voice exemplars, brand assets, hard compliance constraints, the specific
+> first deliverable) remain marked inline as `[ASSUMPTION: …]` and rolled up
+> in §12 — **none of them block Module 0**, which is why Module 0 is what gets
+> built first.
 
 ## 1. Problem statement
 
@@ -84,9 +87,12 @@ rearchitecting the publish pipeline.
   correction made once is available to all three surfaces.
 - Produce output in the user's own analytical voice — prose-forward,
   argumentative, institutional-finance register — not generic AI house style.
-- Build the meta-layer (contracts, builders, observability, error taxonomy)
-  once, first, so every pillar built afterward conforms to the same
-  conventions instead of each pillar inventing its own.
+- Build the component builders (§6) once, first, so every command, agent
+  and skill written afterward is born conforming to one set of conventions
+  instead of each pillar inventing its own. The rest of the meta-layer —
+  schema registry, output validation, run traces, error taxonomy — is
+  deliberately deferred until there are real components to design it
+  against (§6.5).
 
 **Non-goals**
 
@@ -235,70 +241,150 @@ one skill, confirm it resolves as `<plugin>:<skill>` on the installed Claude
 Code version, and record the result in `PROGRESS.md` before generating any
 other component against this assumption.
 
-## 6. Module 0 — the meta-layer
+## 6. Module 0 — the three builders
 
-Module 0 ships before any pillar, and is validated by building one real
-vertical slice through it (Phase 1's thin slice, §10) — not by inspection.
-Meta-tooling expands to fill available time; the discipline here is to ship
-the thinnest version of each piece below that the first end-to-end
-deliverable actually needs, and let friction from that build drive the next
-iteration.
+**Scope.** Module 0 is three commands and nothing else:
+`/meta:command-build`, `/meta:agent-build`, `/meta:skill-build`. Each
+scaffolds a new component of its kind that already conforms to every
+convention in §4 and §5. This is the whole of Module 0's committed scope.
 
-**Typed contracts.** JSON Schema is the single source of truth for every
-inter-stage payload (an ingest record, a normalized record, a retrieval
-result, a synthesis draft, a publish manifest), held in a versioned registry
-under semantic versioning. From each schema, two consumers are generated:
-runtime types for the script layer (Pydantic, since the skill layer is
-Python-first per §7's chosen approach) and a schema block injected into the
-markdown of whichever agent or command must honor it, so the contract is
-visible in the prompt, not just enforced after the fact. A breaking change is
-detected by a registry-level compatibility check run in CI (GitHub Actions,
-per the deployment answer) that diffs a schema against its previous published
-version and fails the build on a non-additive change without a version bump;
-the required response to a genuine breaking change is a new major schema
-version plus an explicit migration note in that schema's changelog, not a
-silent overwrite.
+Everything else the meta-layer will eventually need — the versioned schema
+registry, generated runtime types, the post-agent output validator, run
+traces, the error taxonomy — was specified in v0.1 of this document and is
+now **deferred** (§6.5). The reason is ordering, not doubt: those pieces are
+contracts *between pipeline stages*, and no pipeline stage exists yet, so
+building them now means designing against imagined consumers and guessing at
+payload shapes. The builders are the opposite case — they are needed the
+moment any component is written at all, and building them first means every
+component that follows is born conforming rather than retrofitted.
 
-**Contract enforcement, per layer.** A skill is a real process with a real
-exit code, so `--json` on every skill genuinely enforces its output contract:
-validate against the schema on exit, fail loudly (non-zero exit, structured
-error to stderr) on mismatch. Agents and commands are prompts, not processes,
-and can't enforce a contract on themselves — so enforcement sits in a
-deterministic validator script that runs after every agent invocation,
-checks the returned payload against the schema, and on failure re-prompts the
-agent with the specific validation error rather than passing malformed data
-upward. Retry budget: `[ASSUMPTION: 2 re-prompt attempts, 3 total tries —
-not confirmed with the user. On exhaustion, the run halts and escalates per
-the "halt" behavior in the error taxonomy below, rather than passing
-best-effort malformed output downstream.]`
+### 6.1 Prerequisite — the namespace spike
 
-**The three builders.** `/build-command`, `/build-agent`, and `/build-skill`
-scaffold new components against every convention above: naming (§5),
-directory layout, frontmatter (user-invocable or not), input/output schema
-stubs wired to the registry, the executable stub for skills (a real script in
-`scripts/` with a CLI, per §5's threshold), a test fixture, and a registry
-entry. Self-hosting is the acceptance test: `/build-command` must be able to
-generate a working replacement for itself. If it can't, the convention it
-encodes is underspecified, not the builder.
+The builders scaffold *into* a plugin layout, so the layout has to be known
+good before they encode it. Before any builder is written: one throwaway
+plugin, one skill, confirm it resolves as `<plugin>:<skill>` on the installed
+Claude Code version, and record the result in `PROGRESS.md` (§5).
 
-**Observability.** Every command execution gets a run ID and a structured
-step trace: which agents fired, which skills they called, what the cache did
-(hit/miss/stale-key-evicted), and where wall-clock time went, per pipeline
-stage. This is written to the provenance/run store as the run happens, not
-reconstructed after — a chain of non-deterministic agent calls is undebuggable
-without a trace that exists independent of whether the run succeeded.
+`[ASSUMPTION: the spike confirms plugin resolution works, and the builders
+therefore target the plugin layout in §5. If it does not, the builders target
+flat `.claude/commands/` and `.claude/agents/` files instead, and the
+`<subsystem>:<object>-<verb>` naming becomes a filename convention
+(`meta.command-build.md`) rather than a namespace. That fallback changes what
+the builders emit, not what they are for — it is a one-day change of
+templates, which is precisely why the spike runs first and cheaply.]`
 
-**Error taxonomy.** Five failure classes, with a required behavior each:
+### 6.2 What each builder produces
 
-| Class | Example | Required behavior |
+Each builder takes a component name and a one-line statement of purpose, and
+writes a complete, runnable skeleton — not a blank file with a heading.
+
+**`/meta:command-build`** — the orchestration layer (§4: deterministic,
+human-invoked, may call agents).
+
+- Markdown file at the correct path for its subsystem plugin.
+- Frontmatter: name, one-line description, user-invocable flag (§5 — this is
+  a property, not a location).
+- Body skeleton matching the house structure already used by this repo's
+  `/dev:*` commands: a **Rules** section (what this command must not do), a
+  numbered **Process** section, and an **Output** section stating what the
+  human reads at the end.
+- An explicit declaration of which agents and skills the command may invoke,
+  so the §4 downward-only rule is stated in the artifact rather than assumed.
+
+**`/meta:agent-build`** — the reasoning layer (§4: non-deterministic,
+invoked by commands, may call skills).
+
+- Markdown file under the plugin's `agents/`.
+- Frontmatter: name, description, and the explicit tool allowlist — an agent
+  gets the narrowest tool set that does its job, never `*` by default.
+- An **input contract** block and an **output contract** block written into
+  the prompt body as literal shapes the agent must honor. In Module 0 these
+  are hand-written inline, not generated from a registry (§6.5).
+- A stated judgment boundary: the one decision this agent is being trusted to
+  make, and what it must escalate rather than decide.
+
+**`/meta:skill-build`** — the deterministic layer (§4: single-purpose,
+side-effect-explicit, a thin wrapper over a real script).
+
+- The thin instruction wrapper (`SKILL.md`) — interface only.
+- A **real executable stub** in `scripts/`: an argparse CLI with a `--json`
+  flag, a documented exit-code contract, and non-zero exit plus a structured
+  error on stderr when its own output doesn't match the shape it promises.
+  A skill that scaffolds without a runnable script is a lie about the layer
+  it belongs to.
+- A test fixture that invokes the stub and asserts the `--json` output shape,
+  so the component ships with one check that actually runs.
+
+### 6.3 What all three enforce
+
+These are the reason the builders exist at all — conventions that survive
+because a tool applies them, not because someone remembered.
+
+- **Naming.** `<subsystem>:<object>-<verb>`, object before verb (§5). A name
+  that doesn't fit is **refused**, with the conforming suggestion offered.
+  The builders are the enforcement point for this convention; if they merely
+  warn, the catalog degrades within a month.
+- **Layer discipline.** A command may call agents and skills; an agent may
+  call skills; a skill calls only `src/` subsystems. The builders will not
+  scaffold an upward call (§4).
+- **The registration threshold.** `/meta:skill-build` asks whether an agent
+  must *discover* this capability without being told to use it (§5). If not,
+  it scaffolds a plain script in `scripts/` and declines to register a skill —
+  because every registered skill's description is a token cost paid on every
+  request forever.
+- **No silent overwrite.** A builder never overwrites an existing component;
+  it stops and reports the collision.
+- **Catalog entry.** Every generated component is added to a single catalog
+  file, so "what exists" is answerable by reading one file rather than
+  walking directories.
+
+### 6.4 Acceptance test — self-hosting
+
+Module 0 is done when **`/meta:command-build` generates a working replacement
+for itself**, and the same holds for the other two within their own kind. Not
+inspection, not a review of the templates: the generated artifact runs and
+does the job the original did.
+
+This is the acceptance test rather than a nice-to-have because it is the only
+test that can fail for the right reason. If a builder cannot regenerate
+itself, the convention it encodes is underspecified — there is some rule its
+own author knew and did not write down — and that is exactly the defect
+Module 0 exists to prevent.
+
+### 6.5 Deferred out of Module 0
+
+Specified in v0.1, deliberately not built now. Each is revisited in the
+Phase 2 PRD review (§10), by which point there will be real components to
+design them against.
+
+| Deferred | Why it waits | What re-opens it |
 |---|---|---|
-| Source unreachable | Site down, DNS failure, timeout | Retry with backoff (bounded), then degrade to "skip this source this run" and log it — never halt the whole ingest batch for one dead source |
-| Auth expired | Saved session/cookie no longer valid | Halt that source's ingestion, flag for re-authentication; do not attempt to guess or re-derive credentials |
-| Schema violation | Agent output fails validator | Retry per the contract-enforcement budget above, then halt and escalate to the human |
-| Empty result | Retrieval query returns nothing above confidence threshold | Degrade: surface "no supporting source found" to synthesis rather than letting it draft an unsourced claim |
-| Partial result | PDF table extraction gets 8 of 10 rows | Degrade with an explicit gap marker in the normalized record — never silently accept partial data as complete |
+| Versioned JSON Schema registry | Schemas describe inter-stage payloads; no stage exists to have a payload | The first two pipeline stages that must hand data to each other |
+| Generated runtime types (Pydantic) and schema-block injection | Generation targets need a registry to generate from | The registry landing |
+| Post-agent output validator and re-prompt loop | Needs a schema to validate against, and a real agent whose output goes wrong in a real way | The first agent in production use |
+| Retry budget (the 2-retries/3-tries placeholder, §12 #12) | A number invented before observing a single failure is a guess | The validator landing |
+| Run IDs and structured step traces | Traces make chains of agent calls debuggable; there are no chains yet | The first multi-step command run |
+| Error taxonomy (five classes, v0.1 §6) | Its classes are pipeline failures — source unreachable, empty retrieval, partial extraction — that only the pillars can produce | Ingest work starting |
+| CI schema-compatibility check | Nothing to check for compatibility | The registry landing |
+
+The builders should be written so these are additive later — a generated
+component's contract blocks are hand-written now and registry-generated
+later, in the same slots. They should not be pre-wired to a registry that
+doesn't exist.
+
+### 6.6 What Module 0 does not depend on
+
+None of the twelve open questions in §12 block it. Module 0 touches no
+source, no corpus, no client content, no vendor data, and no brand asset —
+so the MNPI/data-residency question (§12 #1), the source list (#3), the first
+deliverable target (#4), and the voice exemplars (#7) can all stay open while
+it is built. This is the reason it is first.
 
 ## 7. The five pillars
+
+> **Status: design sketch, not committed scope.** Carried forward from
+> v0.1 and revised in the Phase 2 PRD review (§10), after Module 0 lands.
+> Nothing here is built against until then.
 
 ### 7.1 Ingest
 
@@ -479,6 +565,10 @@ expensive to unwind across three renderers instead of one.
 
 ## 8. Design system and token architecture
 
+> **Status: design sketch, not committed scope.** Carried forward from
+> v0.1 and revised in the Phase 2 PRD review (§10), after Module 0 lands.
+> Nothing here is built against until then.
+
 One token file — color, type scale, spacing, chart palettes, table styles —
 compiles to four consumers: CSS custom properties (for the HTML/Chart.js
 surface), a Chart.js theme object, a matplotlib style sheet, and a
@@ -571,65 +661,71 @@ retention periods this default doesn't yet account for.]`
 
 ## 10. Milestones
 
-**Phase 1 — Module 0 plus one working end-to-end thin slice.** Not a
-finished ingest layer with nothing downstream. Concretely: (1) the plugin/
-namespace verification spike (§5) confirming `<plugin>:<skill>` resolution
-on the installed Claude Code version; (2) the thinnest version of each
-Module 0 piece (§6) that a single real pipeline run needs — one schema, one
-validator, minimal observability trace, the error taxonomy's halt/retry
-behavior wired for at least the schema-violation and source-unreachable
-classes; (3) one source ingested end-to-end through normalize, retrieve, and
-synthesize into a draft resembling one of her two existing brownfield
-artifacts (§7.5) — which one is `[ASSUMPTION: pending — she will name the
-target artifact]`. Phase 1 is done when that one artifact's draft reaches the
-review gate with a working citation trail, not when the builders are elegant.
+**Phase 1 — Module 0, the three builders.** The only committed phase in this
+document. Three steps, in order: (1) the namespace spike (§6.1) confirming
+`<plugin>:<skill>` resolution on the installed Claude Code version;
+(2) `/meta:command-build`, `/meta:agent-build`, `/meta:skill-build` built
+against the conventions in §5 and the enforcement list in §6.3; (3) the
+self-hosting acceptance test in §6.4 passing — a builder regenerates a
+working replacement for itself. Phase 1 is done at that point, not when the
+builders are elegant.
 
-**Phase 2 — Widen ingest and formalize synthesis templates.** Add the
-confirmed initial source list (§7.1, pending) across both the local and
-GitHub Actions ingest paths; resolve the embedding/vector-store choice (§7.3)
-against real early corpus size; add the few-shot voice layer to synthesis
-once exemplars are available (§7.4); confirm and build out the top three
-90-day deliverable types (§7.4) as named synthesis templates rather than one
-proof-of-concept.
+**Phase 2 — re-open this PRD.** Once Module 0 lands, everything from §7
+onward is revised with the benefit of having built something real rather than
+imagined: which pillar to build first, what the deferred meta-layer pieces in
+§6.5 actually need to be, and which of the §12 open questions still matter in
+the form they were written. **Sections 7 through 9 and Phase 3 below are
+design sketches carried forward from v0.1, not agreed scope**, and no work
+starts against them before this review.
 
-**Phase 3 — Full design-system rollout and licensed-vendor resolution.**
-Bring in NT-approved brand assets once brand review clears them (§8); resolve
-the per-vendor licensed-data posture for PitchBook/Bloomberg/Morningstar-class
-sources (§9) and build sanctioned-path connectors for whichever are cleared;
-extend publish templates to cover all three surfaces for all confirmed
-deliverable types; revisit the MNPI/data-residency decision (§9) if it
-changed the architecture materially in Phase 1–2.
+**Phase 3 onward — provisional sketch, subject to the Phase 2 review.** The
+shape v0.1 proposed, kept for reference and nothing more: one thin vertical
+slice through ingest → normalize → retrieve → synthesize to a review-ready
+draft of one named existing artifact; then widening ingest to the confirmed
+source list and formalizing synthesis templates; then the design-system
+rollout and the per-vendor licensed-data resolution. Every one of these
+depends on an open question in §12 that is still open.
 
 ## 11. Success metrics
 
-- **Phase 1 gate:** one real source's content travels ingest → normalize →
-  retrieve → synthesize → a review-ready draft of a named existing artifact,
-  with every numeric claim in that draft resolving to a stored citation —
-  observed by inspecting the run's provenance trace, not asserted.
-- **Reuse, not re-derivation:** a correction made to a normalized record (a
-  fixed figure, a corrected entity name) is observably reflected in every
-  subsequent draft that queries it, without a separate manual fix per output
-  surface.
-- **Citation coverage:** 100% of numeric claims in a published deliverable
-  resolve to a source document and anchor — measured by the deterministic
-  validator in §7.4/§9, not by spot-check.
-- **Zero silent licensing violations:** zero ingested records originate from
-  a licensed vendor's site via scraping where that vendor's ToS was not
-  explicitly reviewed and cleared (§9) — the default-deny posture is
-  observable as "no connector exists" for anything not on the cleared list.
-- **Time-to-first-draft:** `[ASSUMPTION: no baseline was supplied to compare
-  against. Once Phase 1 ships, measure wall-clock from "source captured" to
-  "review-ready draft" for the target artifact, and treat that as the
-  baseline this system needs to beat on the next comparable deliverable —
-  rather than inventing a percentage-improvement target now.]`
-- **Plugin architecture holds:** adding the second and third pillar plugins
-  after Phase 1 requires zero changes to the meta-layer's builders or schema
-  registry — confirms the "add a plugin, not deepen a tree" scaling claim in
-  §5 rather than assuming it.
+**Module 0 (Phase 1) — the only metrics that apply to committed scope.**
+
+- **Self-hosting:** `/meta:command-build` generates a working replacement for
+  itself, and each of the other two builders regenerates a working component
+  of its own kind (§6.4). Observed by running the generated artifact, not by
+  reading it.
+- **Naming is enforced, not suggested:** a deliberately malformed name is
+  refused by all three builders, with a conforming alternative offered.
+  Tested with a bad name on purpose, not assumed from the code.
+- **Layer discipline is enforced:** an attempt to scaffold an upward call (a
+  skill invoking an agent, an agent invoking a command) is refused (§4, §6.3).
+- **A scaffolded skill is runnable on arrival:** the generated `scripts/`
+  stub executes, honors `--json`, and its shipped test fixture passes —
+  without hand-editing.
+- **The deferred list stays deferred:** Module 0 ships without a schema
+  registry, validator, trace store, or error taxonomy (§6.5). Scope creep
+  into the meta-layer is the specific failure mode this module is at risk of,
+  so its absence is a measured outcome rather than an oversight.
+
+**Later phases — provisional, carried from v0.1 and subject to the Phase 2
+review (§10).** One real source travelling the full pipeline into a
+review-ready draft with a working citation trail; a correction made once to a
+normalized record showing up in every subsequent draft without per-surface
+rework; 100% of numeric claims resolving to a source anchor via the
+deterministic validator; zero ingested records from a licensed vendor whose
+ToS was not cleared; a time-to-first-draft baseline measured rather than
+invented; and adding the second and third pillar plugins requiring no change
+to the Module 0 builders — the last of these being the real test of whether
+§5's scaling claim held.
 
 ## 12. Open questions and decisions deferred
 
-All flagged inline above, collected here for a single pass of confirmation:
+All flagged inline above, collected here for a single pass of confirmation.
+**None of these block Module 0 (§6.6)** — they gate the pillar work in §7,
+which is itself now deferred to the Phase 2 review (§10). They are kept
+here so the answers can be gathered whenever convenient rather than
+urgently. Item #12 (retry budget) has moved into the deferred meta-layer
+list in §6.5, since the validator it sizes is no longer being built now.
 
 1. **MNPI / data residency** (§9) — can any MNPI-tagged content reach an
    agent-layer step (and therefore Anthropic's API) at all, under the firm's
